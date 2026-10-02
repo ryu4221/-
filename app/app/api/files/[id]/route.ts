@@ -1,0 +1,3 @@
+import {database,bucket,json} from '../../../../lib/storage';
+export const dynamic='force-dynamic';
+export async function GET(req:Request,{params}:{params:Promise<{id:string}>}){try{const {id}=await params;const doc=await database().prepare('SELECT name FROM documents WHERE id=?').bind(id).first<{name:string}>();if(!doc)return json({error:'書類が見つかりません。'},404);const file=await bucket().get(id);if(!file)return json({error:'書類が見つかりません。'},404);return new Response(file.body,{headers:{'Content-Type':'application/octet-stream','Content-Disposition':"attachment; filename*=UTF-8''"+encodeURIComponent(doc.name),'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}})}catch{console.error('Download failed');return json({error:'ダウンロードできませんでした。'},503)}}
