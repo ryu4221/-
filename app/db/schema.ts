@@ -1,3 +1,9 @@
-import {sqliteTable,text,integer,index} from 'drizzle-orm/sqlite-core';
+import {sqliteTable,text,integer,index,primaryKey} from 'drizzle-orm/sqlite-core';
 export const people=sqliteTable('people',{id:text('id').primaryKey(),name:text('name').notNull(),city:text('city').notNull(),profile:text('profile').notNull().default('{}')});
 export const documents=sqliteTable('documents',{id:text('id').primaryKey(),person:text('person').notNull().references(()=>people.id),category:text('category').notNull(),name:text('name').notNull(),size:integer('size').notNull(),created:text('created').notNull()},t=>[index('idx_documents_person').on(t.person)]);
+// 回覧板：職員への周知。既読は職員名簿の各職員が「見ました」を押した記録。削除せず、退職・掲載終了はフラグで扱う。
+export const boardStaff=sqliteTable('board_staff',{id:text('id').primaryKey(),name:text('name').notNull(),active:integer('active').notNull().default(1),created:text('created').notNull()});
+export const boardFolders=sqliteTable('board_folders',{id:text('id').primaryKey(),name:text('name').notNull(),color:text('color').notNull(),created:text('created').notNull()});
+export const boardPosts=sqliteTable('board_posts',{id:text('id').primaryKey(),folder:text('folder').references(()=>boardFolders.id),title:text('title').notNull(),body:text('body').notNull().default(''),author:text('author').notNull(),important:integer('important').notNull().default(0),archived:integer('archived').notNull().default(0),created:text('created').notNull()},t=>[index('idx_board_posts_folder').on(t.folder)]);
+export const boardFiles=sqliteTable('board_files',{id:text('id').primaryKey(),post:text('post').notNull().references(()=>boardPosts.id),name:text('name').notNull(),size:integer('size').notNull(),created:text('created').notNull()},t=>[index('idx_board_files_post').on(t.post)]);
+export const boardReads=sqliteTable('board_reads',{post:text('post').notNull().references(()=>boardPosts.id),staff:text('staff').notNull().references(()=>boardStaff.id),readAt:text('read_at').notNull()},t=>[primaryKey({columns:[t.post,t.staff]})]);

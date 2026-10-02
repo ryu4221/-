@@ -1,0 +1,5 @@
+import {database,bucket,json} from '../../../../../lib/storage';
+export const dynamic='force-dynamic';
+// PDF・画像はブラウザーでそのまま開く（?download=1で保存）。それ以外は常にダウンロード。
+const viewable:Record<string,string>={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp'};
+export async function GET(req:Request,{params}:{params:Promise<{id:string}>}){try{const {id}=await params;const doc=await database().prepare('SELECT name FROM board_files WHERE id=?').bind(id).first<{name:string}>();if(!doc)return json({error:'ファイルが見つかりません。'},404);const file=await bucket().get('board/'+id);if(!file)return json({error:'ファイルが見つかりません。'},404);const type=viewable[doc.name.split('.').pop()?.toLowerCase()??''];const inline=type&&new URL(req.url).searchParams.get('download')!=='1';return new Response(file.body,{headers:{'Content-Type':inline?type:'application/octet-stream','Content-Disposition':(inline?'inline':'attachment')+"; filename*=UTF-8''"+encodeURIComponent(doc.name),'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}})}catch{console.error('Board file failed');return json({error:'ファイルを開けませんでした。'},503)}}

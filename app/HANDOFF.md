@@ -18,6 +18,7 @@
 - 支援書類214件と、そこから分離した議事録欄154件。元画面の転記TXTであり、正式PDF・署名・印影ではない。
 - 本人電話番号は取得時に非表示だったため空欄。phoneUnavailable=trueで区別。その他の未入力は補完していない。
 - 日々の支援記録、請求、工賃等の業務機能は未実装・未取込。
+- 【未公開・Claude実装 2026-10-02】回覧板：教室の2人目の生徒「回覧板」（クリップボードを持つ生徒）。職員へのお知らせ（本文＋PDF等の添付5つまで）、フォルダー（名前と6色）、「見ました」チェック（見た人／まだの人）、未確認・重要・掲載終了の絞り込み、件名・本文・添付ファイル名の検索。使う人は職員名簿から選び、その端末のlocalStorage（board-staff-id）に記憶。削除機能はなく、掲載終了と退職・休職はフラグで扱う。
 
 ## 技術構成とファイル
 TypeScript / React 19 / vinext + Vite / Cloudflare Workers互換 / D1 / R2。
@@ -35,7 +36,11 @@ package.jsonにはNextもありますが、実際のdev/buildはscripts/run-fram
 | app/api/files/[id]/route.ts | R2書類のダウンロード |
 | lib/storage.ts | DB/R2参照、同一オリジン検査 |
 | db/schema.ts、drizzle/ | データ構造とmigration |
-| public/classroom/ | 教室画像・生徒スプライト |
+| public/classroom/ | 教室画像・生徒スプライト（student-board.png は回覧板係） |
+| components/BoardConversation.tsx | 回覧板係の会話（職員選択、一覧、閲覧、見ました、投稿、フォルダー、職員名簿） |
+| lib/board.ts | 回覧板の型・色・上限値 |
+| app/api/board/route.ts | 回覧板の一覧・投稿・各種操作 |
+| app/api/board/files/[id]/route.ts | 回覧板の添付ファイル（PDF・画像はブラウザーで開く） |
 
 ## API
 - GET /api/records → id,name,city,count の一覧（基本情報は一覧に含まない）
@@ -46,8 +51,14 @@ package.jsonにはNextもありますが、実際のdev/buildはscripts/run-fram
 - GET /api/profile?person=ID → 基本情報JSON
 - PUT /api/profile → id,profile（基本情報全体を保存。1項目だけ送ると他項目が消えるので必ず全体を送る）
 - GET /api/files/ID → ファイル取得
+- GET /api/board?staff=職員ID → {staff,folders,posts}。postsのseenはその職員が確認済みか
+- GET /api/board?post=ID → {post,files,reads}
+- POST /api/board → multipart title,body,folder,author(職員ID),important(1/0),file×5まで（1つ20 MB・合計50 MB）。書いた人は自動で確認済み
+- PATCH /api/board → JSON action=read|unread（id,staff）／archive（id,archived）／move（id,folder）／folder（id?,name,color）／staff（id?,name または id,active）
+- GET /api/board/files/ID（?download=1で保存）。R2のキーは board/ID
 
 peopleはid/name/city/profile(JSON文字列)、documentsはid/person/category/name/size/created。
+回覧板はboard_staff、board_folders、board_posts、board_files、board_reads（migration 0002、テーブル追加のみ）。
 本番認証はSites側で保護。アプリのsameOriginだけで公開サイトを保護できるわけではありません。
 
 ## 起動・確認
@@ -61,6 +72,7 @@ Node.js >=22.13.0、npm。使用実績はNode 24。同じPCの既存node_modules
 
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_furry_madripoor.sql
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_flippant_iron_man.sql
+    node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_friendly_adam_warlock.sql
     npm run dev
 
 既存ローカルDBにmigrationを二重適用しないこと。本番への --remote 操作は行わないこと。

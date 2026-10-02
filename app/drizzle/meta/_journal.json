@@ -15,6 +15,13 @@
       "when": 1790901703132,
       "tag": "0001_flippant_iron_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790922962564,
+      "tag": "0002_friendly_adam_warlock",
+      "breakpoints": true
     }
   ]
 }
