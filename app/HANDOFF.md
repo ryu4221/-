@@ -18,7 +18,8 @@
 - 支援書類214件と、そこから分離した議事録欄154件。元画面の転記TXTであり、正式PDF・署名・印影ではない。
 - 本人電話番号は取得時に非表示だったため空欄。phoneUnavailable=trueで区別。その他の未入力は補完していない。
 - 日々の支援記録、請求、工賃等の業務機能は未実装・未取込。
-- 【未公開・Claude実装 2026-10-02】回覧板：教室の2人目の生徒「回覧板」（クリップボードを持つ生徒）。職員へのお知らせ（本文＋PDF等の添付5つまで）、フォルダー（名前と6色）、「見ました」チェック（見た人／まだの人）、未確認・重要・掲載終了の絞り込み、件名・本文・添付ファイル名の検索。使う人は職員名簿から選び、その端末のlocalStorage（board-staff-id）に記憶。削除機能はなく、掲載終了と退職・休職はフラグで扱う。
+- 【未公開・Claude実装 2026-10-02】回覧板：教室の2人目の生徒「回覧板」（クリップボードを持つ生徒）。職員へのお知らせ（本文＋PDF等の添付5つまで）、フォルダー（名前と6色）、「見ました」チェック（見た人／まだの人）、未確認・重要・掲載終了の絞り込み、件名・本文・添付ファイル名の検索。使う人は職員名簿から選び、その端末のlocalStorage（board-staff-id）に記憶。退職・休職はフラグで扱う。
+- 【未公開・Claude実装 2026-10-02 第2弾】回覧板の追加機能：確認期限（期限まもなく／期限切れ表示）、新しい版の追加（前の版も残り、見ましたは最新版でやり直し）、綴りフォルダー（シフト集など。一覧では1枚にまとめ、開くと月ごと）、コメント、対象者の自由記入（名簿の名前が含まれればその人だけ、無ければ全員）、テンプレート（5種＋保存）、掲載期限（無期限／日付）、管理者だけの削除（暗証番号。5回まちがえると10分ロック）、一覧の小さなプレビュー（PDF1ページ目・画像。投稿者のブラウザーでpdf.js 4.10を使って作る）、ピン留め、印刷・PDF保存画面（/board/print?id=）。
 
 ## 技術構成とファイル
 TypeScript / React 19 / vinext + Vite / Cloudflare Workers互換 / D1 / R2。
@@ -37,8 +38,13 @@ package.jsonにはNextもありますが、実際のdev/buildはscripts/run-fram
 | lib/storage.ts | DB/R2参照、同一オリジン検査 |
 | db/schema.ts、drizzle/ | データ構造とmigration |
 | public/classroom/ | 教室画像・生徒スプライト（student-board.png は回覧板係） |
-| components/BoardConversation.tsx | 回覧板係の会話（職員選択、一覧、閲覧、見ました、投稿、フォルダー、職員名簿） |
-| lib/board.ts | 回覧板の型・色・上限値 |
+| components/BoardConversation.tsx | 回覧板係の会話の流れ（職員選択、管理者、フォルダー、名簿） |
+| lib/board.ts | 回覧板の型・色・上限値・対象者/期限の判定・テンプレート |
+| lib/boardAdmin.ts | 管理者の暗証番号（PBKDF2）とロック |
+| lib/thumbnail.ts | 一覧プレビューの作成（ブラウザー側、pdfjs-dist） |
+| components/board/ | 回覧板の一覧・詳細・投稿フォーム |
+| app/board/print/page.tsx | 掲示物の印刷・PDF保存画面 |
+| app/api/board/thumb/[id]/route.ts | 一覧プレビュー画像 |
 | app/api/board/route.ts | 回覧板の一覧・投稿・各種操作 |
 | app/api/board/files/[id]/route.ts | 回覧板の添付ファイル（PDF・画像はブラウザーで開く） |
 
@@ -53,12 +59,14 @@ package.jsonにはNextもありますが、実際のdev/buildはscripts/run-fram
 - GET /api/files/ID → ファイル取得
 - GET /api/board?staff=職員ID → {staff,folders,posts}。postsのseenはその職員が確認済みか
 - GET /api/board?post=ID → {post,files,reads}
-- POST /api/board → multipart title,body,folder,author(職員ID),important(1/0),file×5まで（1つ20 MB・合計50 MB）。書いた人は自動で確認済み
-- PATCH /api/board → JSON action=read|unread（id,staff）／archive（id,archived）／move（id,folder）／folder（id?,name,color）／staff（id?,name または id,active）
+- GET /api/board → {staff,folders,posts,templates,hasPin}。postsのmyVersion=その職員が確認した版、readers=最新版を確認した職員ID
+- POST /api/board → multipart title,body,folder,author(職員ID),target,due,expires,important,pinned,file×5,thumb（1つ20 MB・合計50 MB）。post=ID を付けると新しい版の追加（file必須、note任意）
+- PATCH /api/board → JSON action=read|unread|archive|pin|move|meta（target,due,expires）|comment|template|folder（binder）|staff|setPin|admin
+- DELETE /api/board → JSON kind=post|comment|template, id, staff, pin（管理者のみ）
 - GET /api/board/files/ID（?download=1で保存）。R2のキーは board/ID
 
 peopleはid/name/city/profile(JSON文字列)、documentsはid/person/category/name/size/created。
-回覧板はboard_staff、board_folders、board_posts、board_files、board_reads（migration 0002、テーブル追加のみ）。
+回覧板はboard_staff、board_folders、board_posts、board_files、board_reads（migration 0002）、board_versions、board_comments、board_templates、board_settings と列の追加（migration 0003）。どちらもテーブル・列の追加のみ。
 本番認証はSites側で保護。アプリのsameOriginだけで公開サイトを保護できるわけではありません。
 
 ## 起動・確認
@@ -73,6 +81,7 @@ Node.js >=22.13.0、npm。使用実績はNode 24。同じPCの既存node_modules
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_furry_madripoor.sql
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_flippant_iron_man.sql
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_friendly_adam_warlock.sql
+    node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_dry_cammi.sql
     npm run dev
 
 既存ローカルDBにmigrationを二重適用しないこと。本番への --remote 操作は行わないこと。

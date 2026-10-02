@@ -72,3 +72,105 @@
 .boardStaff li.retired{opacity:.65}
 .boardStaff .talkSecondary{min-height:36px;padding:5px 12px;font-size:13px}
 @media(max-width:600px){.boardReads,.boardFolderList{grid-template-columns:1fr}.boardPostActions{flex-direction:column;align-items:stretch}}
+/* 回覧板 追加機能（期限・版・綴り・コメント・プレビュー・管理者・印刷） */
+.boardPanel{max-height:72dvh}
+.boardItem,.boardBinder{flex-direction:row;align-items:flex-start;gap:12px}
+.boardItemText{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1}
+.boardThumb{width:64px;height:84px;object-fit:cover;object-position:top;flex-shrink:0;background:#fff;border:1px solid #d6dcc6;box-shadow:2px 2px 0 #e3e6d6;image-rendering:auto}
+.boardItem.pinned{border-top:2px solid #c99a3d}
+.boardPin{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:#8a6420;background:#fbf0d2;border:1px solid #e5cd8f;padding:2px 8px;border-radius:3px}
+.boardVersion{font-size:12px;font-weight:700;color:#3b5f86;background:#e4edf6;border:1px solid #bcd0e4;padding:2px 8px;border-radius:3px}
+.boardDue{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:3px;color:#5f735d;background:#eef3e3;border:1px solid #cfdcbf}
+.boardDue.soon{color:#93582a;background:#fbecd6;border-color:#e8c38f}
+.boardDue.overdue{color:#fff;background:#c4472f;border-color:#a23a26}
+.boardBinder{display:flex;text-align:left;padding:12px 14px 12px 16px;background:repeating-linear-gradient(0deg,#fffef8 0 22px,#f3f1e2 22px 23px);border:1px solid #d6dcc6;border-left:10px double var(--tag-ink);box-shadow:3px 3px 0 #e3e6d6,5px 5px 0 #d9dcca}
+.boardBinder:hover{background:#fbf6dc}
+.boardBinder b{font-size:15px;line-height:1.5;color:#2f4a45}
+.boardBinderCount{font-size:12px;color:#7c8b73}
+.boardBinderArrow{align-self:center;color:#8a9779;flex-shrink:0}
+.boardMonth{font-size:13px;color:#5f735d;margin:8px 0 0;padding-bottom:4px;border-bottom:1px dashed #cdd6bd;letter-spacing:.05em}
+.boardFacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:10px 12px;background:#f6f7ee;border:1px solid #e0e5d2}
+.boardFacts dt{display:flex;align-items:center;gap:4px;font-size:11px;color:#7c8b73;margin-bottom:3px}
+.boardFacts dd{margin:0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.boardFacts dd small{display:block;font-size:11px;color:#8a9779}
+.boardVersionBlock h4{font-size:13px;margin:0 0 6px;color:#3b5f86}
+.boardVersionBlock h4 small{font-weight:400;color:#7c8b73;margin-left:6px}
+.boardNote{font-size:13px;color:#5f6a58;margin:0 0 6px;padding:6px 10px;background:#f7f4e4;border-left:3px solid #d9c27e}
+.boardHistory{border:1px dashed #cdd6bd;padding:8px 12px;background:#fafbf4}
+.boardHistory summary{cursor:pointer;font-size:13px;font-weight:650;color:#5f735d}
+.boardHistory .boardVersionBlock{margin-top:10px;opacity:.9}
+.boardOlder{font-size:12px;color:#8a6a3c;margin:0;flex-basis:100%}
+.boardReads li.older{background:#eef2f8;border-color:#c7d3e3;color:#4f6683}
+.boardComments{border-top:1px dashed #d9dfc7;padding-top:10px}
+.boardComments h4{display:flex;align-items:center;gap:5px;font-size:13px;margin:0 0 8px;color:#5f735d}
+.boardComments h4 span{font-size:12px;background:#e3eadb;padding:0 8px;border-radius:20px}
+.boardComments ul{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:7px}
+.boardComments li{background:#f4f6ea;border:1px solid #dbe1cb;border-radius:3px 10px 10px 10px;padding:8px 11px}
+.boardComments li>div{display:flex;align-items:center;gap:8px;font-size:12px}
+.boardComments li small{color:#7c8b73}
+.boardComments li button{margin-left:auto;color:#a24e2b;padding:3px;display:grid;place-items:center}
+.boardComments li p{margin:4px 0 0;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.boardComments form{display:flex;flex-direction:column;gap:8px}
+.boardComments textarea{width:100%;font:inherit;font-size:14px;line-height:1.6;padding:8px 10px;border:1px solid #c6d1b8;background:#fffefa;resize:vertical}
+.boardComments .talkPrimary{align-self:flex-end;width:auto}
+.boardPostActions{justify-content:flex-start}
+.boardPostActions .talkSecondary{display:inline-flex}
+.boardMore{margin-top:12px;border:1px solid #d9dfc9;background:#f7f8ef;padding:8px 12px}
+.boardMore summary{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#5f735d;font-weight:650}
+.boardMetaForm{margin:10px 0}
+.boardMetaForm label{flex:1 1 180px}
+.boardMoreRow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px}
+.boardDanger,.talkChoices>button.boardDanger{color:#a23a26!important;border-color:#e1bdaa!important;background:#fff4ee!important}
+.boardTemplates{flex-basis:100%;display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#f4f6ea;border:1px solid #dbe1cb}
+.boardTemplates>span{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:650;color:#5f735d}
+.boardTemplates>div{display:flex;flex-wrap:wrap;gap:6px}
+.boardTemplates button{font-size:13px;padding:6px 11px;border:1px solid #b9c7ad;background:#fffef8;color:#3e5c44}
+.boardTemplates button:hover{background:#f7edbd}
+.boardCustomTemplate{display:inline-flex}
+.boardCustomTemplate>button+button{border-left:0;padding:6px 7px;color:#a24e2b}
+.boardLabel{display:inline-flex;align-items:center;gap:5px}
+.boardHelp{display:block;font-size:12px;color:#7c8b73;line-height:1.6;margin:4px 0 0;flex-basis:100%}
+.boardNameChips{flex-basis:100%;display:flex;flex-wrap:wrap;gap:5px;margin-top:-4px}
+.boardNameChips button{font-size:12px;padding:4px 9px;border:1px solid #cdd6bd;background:#fffef8;color:#5f735d;border-radius:20px}
+.boardNameChips button:disabled{opacity:.45}
+.boardWrite>label.boardHalf,.boardWrite>.boardHalf{flex:1 1 220px}
+.boardWrite input[type=date],.boardMetaForm input[type=date]{padding:7px 9px;border:1px solid #c6d1b8;background:#fffefa;font-size:15px;border-radius:4px;margin-top:8px}
+.boardExpires{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.boardExpires legend{display:flex;align-items:center;gap:5px;font-size:14px;margin-bottom:6px}
+.boardExpires>label{display:inline-flex;align-items:center;gap:5px;font-size:14px}
+.boardExpires input[type=date]{margin-top:0}
+.boardQuick{display:inline-flex;gap:5px}
+.boardQuick button{font-size:12px;padding:4px 9px;border:1px solid #cdd6bd;background:#fffef8;color:#5f735d}
+.boardCheckbox.pin{color:#8a6420}
+.boardCheckbox.binder{color:#3b5f86;flex-basis:100%;line-height:1.6}
+.boardTemplateSave{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%}
+.boardTemplateSave input{flex:1 1 180px;padding:8px 10px;border:1px solid #c6d1b8;background:#fffefa}
+.boardAdmin{display:inline-flex;align-items:center;gap:3px;font-style:normal;font-size:11px;font-weight:700;color:#674d84;background:#ebe2f1;border:1px solid #d3c4e0;padding:1px 7px;border-radius:3px;margin-left:6px}
+.boardStaffActions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.boardAdminBox{margin-top:12px;padding:12px;background:#f3eff7;border:1px solid #ddd2e8;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.boardAdminBox p{margin:0;font-size:13px;line-height:1.7;color:#5a4a6c}
+@media(max-width:600px){.boardFacts{grid-template-columns:1fr}.boardThumb{width:48px;height:64px}.boardStaff li{flex-direction:column;align-items:stretch}.boardPostActions .talkSecondary{justify-content:center}}
+/* 印刷・PDF保存用の画面 */
+.boardPrint{min-height:100vh;background:#f5f2e9;padding:20px 16px 40px;color:#222;font-family:'Yu Gothic UI','Meiryo',sans-serif}
+.boardPrintBar{max-width:794px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:13px;color:#5f735d}
+.boardPrintBar button{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:1px solid #c9d5be;background:#fffef8;font-weight:650}
+.boardPrintBar button.primary{background:#446b56;color:#fffce8;border-color:#315340}
+.boardPaper{max-width:794px;margin:auto;background:#fff;padding:40px 44px;box-shadow:0 2px 10px #0002;display:flex;flex-direction:column;gap:16px}
+.boardPaper header{display:flex;justify-content:space-between;font-size:12px;color:#555;border-bottom:2px solid #333;padding-bottom:6px}
+.boardPaper h1{font-size:22px;margin:0;line-height:1.5}
+.boardPaper h2{font-size:14px;margin:0 0 6px;border-left:4px solid #446b56;padding-left:8px}
+.boardPaper table{width:100%;border-collapse:collapse;font-size:13px}
+.boardPaper th,.boardPaper td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}
+.boardPaper th{background:#f1f1ec;font-weight:600;white-space:nowrap}
+.boardPaperFacts th{width:5.5em}
+.boardPaperBody{font-size:14px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px 0}
+.boardPaperFiles ul{margin:0;padding-left:20px;font-size:13px;line-height:1.8}
+.boardPaperFiles p{font-size:13px;margin:0 0 4px}
+.boardPaperFiles img{display:block;max-width:100%;max-height:500px;margin:8px 0;border:1px solid #ccc}
+.boardPaperChecks td:nth-child(2){width:4em;text-align:center}
+.boardPaperChecks td:nth-child(3){width:10em}
+.boardPaper footer{font-size:11px;color:#777;text-align:right;border-top:1px solid #ccc;padding-top:6px}
+@media print{.boardPrint{background:#fff;padding:0}.boardPrintBar{display:none}.boardPaper{box-shadow:none;padding:0;max-width:none}@page{size:A4;margin:15mm}}
+.talkInput>label.boardCheckbox,.boardExpires>label{display:flex;flex-direction:row;align-items:center;gap:6px}
+.boardExpires>label{flex-basis:auto;font-weight:500}
+.talkInput input[type=checkbox],.talkInput input[type=radio],.boardToggles input{width:17px;height:17px;min-height:0;margin:0;padding:0;flex:none;accent-color:#446b56}

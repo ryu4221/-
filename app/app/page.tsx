@@ -5,7 +5,7 @@ import {classroomFeatures,classroomLayout} from '../lib/classroom';
 import './classroom.css';
 import StudentConversation from '../components/StudentConversation';
 import BoardConversation,{boardStaffKey} from '../components/BoardConversation';
-import type {Staff,PostSummary} from '../lib/board';
+import {needsMyCheck,type Board} from '../lib/board';
 export default function Classroom(){
  const [paused,setPaused]=useState(false); const [conversation,setConversation]=useState<{x:number;y:number;id:string}|null>(null);
  const [unread,setUnread]=useState(0);
@@ -13,8 +13,8 @@ export default function Classroom(){
  useEffect(()=>{const media=window.matchMedia('(prefers-reduced-motion: reduce)');const sync=()=>setReduced(media.matches);sync();media.addEventListener('change',sync);try{setPaused(localStorage.getItem('classroom-motion-paused')==='true')}catch{}return()=>media.removeEventListener('change',sync)},[]);
  // 回覧板の生徒に、いま使っている職員の未確認件数を表示する
  useEffect(()=>{if(conversation)return;let staff='';try{staff=localStorage.getItem(boardStaffKey)||''}catch{}
-  (staff?fetch('/api/board?staff='+encodeURIComponent(staff)).then(r=>r.ok?r.json() as Promise<{staff:Staff[];posts:PostSummary[]}>:null):Promise.resolve(null))
-   .then(d=>setUnread(d&&d.staff.some(s=>s.id===staff&&s.active)?d.posts.filter(p=>!p.archived&&!p.seen).length:0)).catch(()=>{})},[conversation]);
+  (staff?fetch('/api/board?staff='+encodeURIComponent(staff)).then(r=>r.ok?r.json() as Promise<Board>:null):Promise.resolve(null))
+   .then(d=>setUnread(d&&d.staff.some(s=>s.id===staff&&s.active)?d.posts.filter(p=>needsMyCheck(p,staff,d.staff)).length:0)).catch(()=>{})},[conversation]);
  const stop=paused||reduced;
  function toggleMotion(){const next=!paused;setPaused(next);try{localStorage.setItem('classroom-motion-paused',String(next))}catch{}}
  const size=classroomLayout(classroomFeatures.length);
