@@ -3,6 +3,7 @@
 export const classroomFeatures = [
   {id:'users',label:'利用者情報',href:'/users',avatar:'/classroom/student-chunky.png',description:'利用者様の基本情報・支援書類'},
   {id:'board',label:'回覧板',href:'/',avatar:'/classroom/student-board.png',description:'職員へのお知らせ・シフト表と確認チェック'},
+  {id:'proof',label:'文章チェック',href:'/',avatar:'/classroom/student-proof.png',description:'誤字・脱字のチェック（文章は保存・送信しない）'},
 ];
 export function classroomLayout(count:number){
   const columns=Math.min(3,Math.max(1,count));

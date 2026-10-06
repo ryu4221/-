@@ -174,3 +174,41 @@
 .talkInput>label.boardCheckbox,.boardExpires>label{display:flex;flex-direction:row;align-items:center;gap:6px}
 .boardExpires>label{flex-basis:auto;font-weight:500}
 .talkInput input[type=checkbox],.talkInput input[type=radio],.boardToggles input{width:17px;height:17px;min-height:0;margin:0;padding:0;flex:none;accent-color:#446b56}
+/* 文章チェックの係 */
+.proofText{width:100%;font:inherit;font-size:15px;line-height:1.8;padding:10px 12px;border:1px solid #b9c9af;background:#fffefa;border-radius:4px;margin-top:8px;resize:vertical;font-weight:400;color:#2f4a45}
+.proofNote{display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:1.7;color:#5f735d;margin:0;flex-basis:100%;background:#eef3e3;border:1px solid #d3dfc4;padding:8px 10px}
+.proofNote svg{flex-shrink:0;margin-top:2px}
+.proofCount{font-size:12px;color:#7c8b73;flex-basis:100%;text-align:right;margin-top:-6px}
+.proofAbout{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:7px}
+.proofAbout li{font-size:14px;line-height:1.7;padding:8px 12px;background:#fffef8;border:1px solid #d6dcc6}
+.proofAbout b{display:inline-block;min-width:7.5em;color:#674d84}
+.proofAbout+.proofNote{margin-bottom:12px}
+.proofSummary{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.proofSummary .talkPrimary{width:auto;margin-left:auto}
+.proofBadge{display:inline-flex;align-items:baseline;gap:5px;font-size:20px;font-weight:800;padding:4px 12px;border-radius:4px;border:1px solid}
+.proofBadge small{font-size:12px;font-weight:600}
+.proofBadge.error{color:#a23a26;background:#fdece6;border-color:#e7b59b}
+.proofBadge.warn{color:#93582a;background:#fbf0dc;border-color:#e8c38f}
+.proofBadge.style{color:#3b5f86;background:#e7eef6;border-color:#c3d3e6}
+.proofToggle{margin:0 0 10px}
+.proofPreview{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:2;background:#fffef7;border:1px solid #d9dfc7;padding:12px 14px;max-height:220px;overflow-y:auto;margin-bottom:12px}
+.proofPreview mark{background:none;color:inherit;padding:0 1px;border-bottom:3px solid}
+.proofPreview mark sup{font-size:10px;font-weight:700;margin-left:1px}
+.proofPreview mark.proof-error{background:#fde3da;border-color:#d0573a}
+.proofPreview mark.proof-warn{background:#fcefd6;border-color:#d9963f}
+.proofPreview mark.proof-style{background:#e4edf7;border-color:#7a9cc6}
+.proofList{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:8px}
+.proofList li{background:#fffef8;border:1px solid #d6dcc6;border-left:6px solid #9aa190;padding:10px 12px}
+.proofList li.proof-error{border-left-color:#d0573a}
+.proofList li.proof-warn{border-left-color:#d9963f}
+.proofList li.proof-style{border-left-color:#7a9cc6}
+.proofHead{display:flex;align-items:center;gap:8px;font-size:12px;color:#7c8b73}
+.proofNum{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#53705b;color:#fffce8;font-weight:700;font-size:12px}
+.proofKind{font-weight:700;color:#3e5c44;font-size:13px}
+.proofChange{margin:6px 0 2px;font-size:16px;overflow-wrap:anywhere}
+.proofChange s{color:#a23a26;text-decoration-thickness:2px}
+.proofChange b{color:#2f6a43}
+.proofMessage{margin:0;font-size:13px;line-height:1.7;color:#5f6a58}
+.proofActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.proofActions .talkSecondary{min-height:36px;padding:5px 12px;font-size:13px}
+@media(max-width:600px){.proofSummary .talkPrimary{width:100%;margin-left:0}.proofAbout b{display:block}}

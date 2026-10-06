@@ -20,6 +20,7 @@
 - 日々の支援記録、請求、工賃等の業務機能は未実装・未取込。
 - 【未公開・Claude実装 2026-10-02】回覧板：教室の2人目の生徒「回覧板」（クリップボードを持つ生徒）。職員へのお知らせ（本文＋PDF等の添付5つまで）、フォルダー（名前と6色）、「見ました」チェック（見た人／まだの人）、未確認・重要・掲載終了の絞り込み、件名・本文・添付ファイル名の検索。使う人は職員名簿から選び、その端末のlocalStorage（board-staff-id）に記憶。退職・休職はフラグで扱う。
 - 【未公開・Claude実装 2026-10-02 第2弾】回覧板の追加機能：確認期限（期限まもなく／期限切れ表示）、新しい版の追加（前の版も残り、見ましたは最新版でやり直し）、綴りフォルダー（シフト集など。一覧では1枚にまとめ、開くと月ごと）、コメント、対象者の自由記入（名簿の名前が含まれればその人だけ、無ければ全員）、テンプレート（5種＋保存）、掲載期限（無期限／日付）、管理者だけの削除（暗証番号。5回まちがえると10分ロック）、一覧の小さなプレビュー（PDF1ページ目・画像。投稿者のブラウザーでpdf.js 4.10を使って作る）、ピン留め、印刷・PDF保存画面（/board/print?id=）。
+- 【未公開・Claude実装 2026-10-06】文章チェック：教室の3人目の生徒「文章チェック」（赤ペンを持つ生徒）。貼り付けた文章の誤字・脱字、重複、ら抜き・い抜き、二重敬語・重ね言葉、日付と曜日の食い違い、括弧の閉じ忘れ、表記ゆれ・表記の提案を指摘し、「直す」「まとめて直す」「このままにする」「直した文章をコピー」ができる。判定はブラウザー内の規則（lib/proofread.ts）だけで行い、文章は送信・保存しない。DB・APIの変更なし。
 
 ## 技術構成とファイル
 TypeScript / React 19 / vinext + Vite / Cloudflare Workers互換 / D1 / R2。
@@ -44,6 +45,9 @@ package.jsonにはNextもありますが、実際のdev/buildはscripts/run-fram
 | lib/thumbnail.ts | 一覧プレビューの作成（ブラウザー側、pdfjs-dist） |
 | components/board/ | 回覧板の一覧・詳細・投稿フォーム |
 | app/board/print/page.tsx | 掲示物の印刷・PDF保存画面 |
+| components/ProofreadConversation.tsx | 文章チェック係の会話 |
+| lib/proofread.ts | 誤字脱字チェックの規則（ブラウザー内で判定） |
+| scripts/proofread.test.mts | 規則の確認（node --experimental-strip-types scripts/proofread.test.mts） |
 | app/api/board/thumb/[id]/route.ts | 一覧プレビュー画像 |
 | app/api/board/route.ts | 回覧板の一覧・投稿・各種操作 |
 | app/api/board/files/[id]/route.ts | 回覧板の添付ファイル（PDF・画像はブラウザーで開く） |
