@@ -212,3 +212,5 @@
 .proofActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .proofActions .talkSecondary{min-height:36px;padding:5px 12px;font-size:13px}
 @media(max-width:600px){.proofSummary .talkPrimary{width:100%;margin-left:0}.proofAbout b{display:block}}
+/* スマホで生徒が3人以上のときは2列にする（既存の [style*="--columns: 3"] はReactの出力 "--columns:3" に一致しないため） */
+@media(max-width:760px){.studentArea:has(.studentSlot:nth-child(3)){grid-template-columns:repeat(2,minmax(0,1fr))}}
