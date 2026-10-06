@@ -15,3 +15,9 @@ export const boardComments=sqliteTable('board_comments',{id:text('id').primaryKe
 export const boardTemplates=sqliteTable('board_templates',{id:text('id').primaryKey(),name:text('name').notNull(),title:text('title').notNull(),body:text('body').notNull().default(''),target:text('target').notNull().default(''),folder:text('folder'),created:text('created').notNull()});
 // 管理者の暗証番号（ハッシュ）など
 export const boardSettings=sqliteTable('board_settings',{key:text('key').primaryKey(),value:text('value').notNull()});
+// 日々の記録作成：その人の特徴、文例（ノウビーの書き方の見本）、作成した記録、AIの設定
+export const personTraits=sqliteTable('person_traits',{person:text('person').primaryKey().references(()=>people.id),traits:text('traits').notNull().default(''),updated:text('updated').notNull()});
+export const recordExamples=sqliteTable('record_examples',{id:text('id').primaryKey(),kind:text('kind').notNull(),body:text('body').notNull(),created:text('created').notNull()});
+export const dailyRecords=sqliteTable('daily_records',{id:text('id').primaryKey(),person:text('person').notNull().references(()=>people.id),date:text('date').notNull(),memo:text('memo').notNull().default(''),record:text('record').notNull().default(''),consideration:text('consideration').notNull().default(''),author:text('author').notNull().default(''),created:text('created').notNull(),updated:text('updated').notNull()},t=>[index('idx_daily_records_person').on(t.person,t.date)]);
+// AIの接続先など（鍵はサーバーの中だけで使い、画面には返さない）
+export const appSettings=sqliteTable('app_settings',{key:text('key').primaryKey(),value:text('value').notNull()});

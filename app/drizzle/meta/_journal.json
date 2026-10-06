@@ -29,6 +29,13 @@
       "when": 1790925389017,
       "tag": "0003_dry_cammi",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791248223356,
+      "tag": "0004_secret_sphinx",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,8 @@
 - 【未公開・Claude実装 2026-10-02】回覧板：教室の2人目の生徒「回覧板」（クリップボードを持つ生徒）。職員へのお知らせ（本文＋PDF等の添付5つまで）、フォルダー（名前と6色）、「見ました」チェック（見た人／まだの人）、未確認・重要・掲載終了の絞り込み、件名・本文・添付ファイル名の検索。使う人は職員名簿から選び、その端末のlocalStorage（board-staff-id）に記憶。退職・休職はフラグで扱う。
 - 【未公開・Claude実装 2026-10-02 第2弾】回覧板の追加機能：確認期限（期限まもなく／期限切れ表示）、新しい版の追加（前の版も残り、見ましたは最新版でやり直し）、綴りフォルダー（シフト集など。一覧では1枚にまとめ、開くと月ごと）、コメント、対象者の自由記入（名簿の名前が含まれればその人だけ、無ければ全員）、テンプレート（5種＋保存）、掲載期限（無期限／日付）、管理者だけの削除（暗証番号。5回まちがえると10分ロック）、一覧の小さなプレビュー（PDF1ページ目・画像。投稿者のブラウザーでpdf.js 4.10を使って作る）、ピン留め、印刷・PDF保存画面（/board/print?id=）。
 - 【未公開・Claude実装 2026-10-06】文章チェック：教室の3人目の生徒「文章チェック」（赤ペンを持つ生徒）。貼り付けた文章の誤字・脱字、重複、ら抜き・い抜き、二重敬語・重ね言葉、日付と曜日の食い違い、括弧の閉じ忘れ、表記ゆれ・表記の提案を指摘し、「直す」「まとめて直す」「このままにする」「直した文章をコピー」ができる。判定はブラウザー内の規則（lib/proofread.ts）だけで行い、文章は送信・保存しない。DB・APIの変更なし。
+- 【未公開・Claude実装 2026-10-06】日々の記録：教室の4人目の生徒「日々の記録」（ノートを持つ生徒）。利用者を選び、その人の特徴（朝が弱い等）・アセスメント／本案（個別支援計画）／モニタリングの最新テキスト書類・今日のメモから、AIが「日々の記録」と「職員考察」の下書きを作る。文例（ノウビーの書き方）を登録すると文体をまねる。下書きは編集・文章チェック・コピー・保存（日付ごと）ができ、削除は管理者のみ。AIに送る前に、本人・家族・他の利用者の氏名、住所、電話番号、受給者証番号、生年月日、メールを伏せる。送る内容は画面で確認できる。AI未設定のときは外部に何も送らず「見本」を表示。
+- AIの接続：OpenAI互換の chat/completions 形式。環境変数 AI_BASE_URL・AI_API_KEY・AI_MODEL があればそれを使い、無ければ画面の「AIの設定（管理者）」で登録した値（app_settings。鍵は画面に返さない）を使う。初期のおすすめは Cloudflare Workers AI の無料枠。
 
 ## 技術構成とファイル
 TypeScript / React 19 / vinext + Vite / Cloudflare Workers互換 / D1 / R2。
@@ -47,6 +49,10 @@ package.jsonにはNextもありますが、実際のdev/buildはscripts/run-fram
 | app/board/print/page.tsx | 掲示物の印刷・PDF保存画面 |
 | components/ProofreadConversation.tsx | 文章チェック係の会話 |
 | lib/proofread.ts | 誤字脱字チェックの規則（ブラウザー内で判定） |
+| components/DailyConversation.tsx | 日々の記録の係の会話（特徴・資料・メモ・下書き・文例・AIの設定） |
+| lib/daily.ts | 伏せ字処理、AIへの指示文、返事の読み取り、見本の文章 |
+| lib/ai.ts | AIへの接続（サーバー専用、接続先の切り替え） |
+| app/api/daily/route.ts、app/api/daily/generate/route.ts | 特徴・文例・記録・AI設定のAPIと下書き作成 |
 | scripts/proofread.test.mts | 規則の確認（node --experimental-strip-types scripts/proofread.test.mts） |
 | app/api/board/thumb/[id]/route.ts | 一覧プレビュー画像 |
 | app/api/board/route.ts | 回覧板の一覧・投稿・各種操作 |
@@ -70,6 +76,7 @@ package.jsonにはNextもありますが、実際のdev/buildはscripts/run-fram
 - GET /api/board/files/ID（?download=1で保存）。R2のキーは board/ID
 
 peopleはid/name/city/profile(JSON文字列)、documentsはid/person/category/name/size/created。
+日々の記録は person_traits、record_examples、daily_records、app_settings（migration 0004、テーブル追加のみ）。
 回覧板はboard_staff、board_folders、board_posts、board_files、board_reads（migration 0002）、board_versions、board_comments、board_templates、board_settings と列の追加（migration 0003）。どちらもテーブル・列の追加のみ。
 本番認証はSites側で保護。アプリのsameOriginだけで公開サイトを保護できるわけではありません。
 
@@ -86,6 +93,7 @@ Node.js >=22.13.0、npm。使用実績はNode 24。同じPCの既存node_modules
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_flippant_iron_man.sql
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_friendly_adam_warlock.sql
     node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_dry_cammi.sql
+    node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_secret_sphinx.sql
     npm run dev
 
 既存ローカルDBにmigrationを二重適用しないこと。本番への --remote 操作は行わないこと。
@@ -108,3 +116,13 @@ Windowsで公式site-workflow.mjsのpackage-site.sh呼び出しがパス解釈�
 3. 変更部分の型チェック・ビルド・操作確認。
 4. TURN_LOG.md更新。公開済み／未公開を明記。
 5. 次の担当へ変更ファイルと残作業を渡す。
+
+## AIの設定手順（日々の記録）
+ユーザーが行うこと（Cloudflare Workers AI の無料枠を使う場合。画面や名称は変わることがあるので、Cloudflareの公式案内も確認する）：
+1. Cloudflare の無料アカウントを作る。
+2. ダッシュボードで「アカウントID」（32文字の英数字）を確認する。
+3. 「APIトークン」を作る。権限は Workers AI の読み取り／実行だけにする。
+4. Workers AI のモデル一覧から、日本語が使えるモデル名を選ぶ（例：@cf/meta/llama-3.3-70b-instruct-fp8-fast。実際に使えるかは一覧で確認）。
+5. アプリの「日々の記録」→「AIの設定（管理者）」で、サービス＝Cloudflare、アカウントID、モデル名、鍵（APIトークン）、管理者の暗証番号を入れて保存する。
+Codexが確認すること：公開先（Sites）から api.cloudflare.com などの外部へ通信できるか。Sitesが秘密の環境変数に対応していれば、AI_BASE_URL・AI_API_KEY・AI_MODEL で設定してもよい（その場合は画面の設定より優先される）。鍵をコード・Git・TURN_LOGに書かない。
+無料枠を超えると「無料で使える量を超えました」と表示され、翌日まで使えない（文章チェックの規則判定は使える）。
