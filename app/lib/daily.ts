@@ -1,7 +1,23 @@
 // 日々の記録・職員考察の作成（画面とサーバーの両方で使う）
 export const traitSuggestions=['朝が弱い','体力がない','最近運動していない','集中が続きにくい','疲れやすい','人見知りがある','天候で体調が変わりやすい','手先が器用','丁寧に作業する','休憩の声かけが必要','睡眠が不規則','服薬の確認が必要','声かけで切り替えられる','新しいことに不安がある'];
 export const quickMemos=['体調良好','体調不良の訴えあり','作業に集中できていた','途中で休憩','午前のみ利用','送迎あり','昼食完食','表情が明るい','口数が少ない','遅刻あり'];
+export const workSuggestions=['チラシ折り','封入作業','POP作成','軽作業','清掃','施設外就労'];
 export const dailyLimits={memo:2000,traits:2000,example:3000,record:5000,docChars:1800};
+// かんたん入力（利用の形・時刻・作業・本人の言葉）と自由メモを、AIに渡すメモ1つにまとめる
+export type MemoForm={mode:''|'通所'|'在宅';start:string;end:string;work:string;amount:string;words:string;memo:string};
+export const emptyMemoForm:MemoForm={mode:'',start:'',end:'',work:'',amount:'',words:'',memo:''};
+export function composeMemo(f:MemoForm){
+ const t=(s:string)=>s.trim(),words=t(f.words).replace(/^「|」$/g,'');
+ const lines=[
+  t(f.start)&&t(f.start)+' '+(f.mode==='在宅'?'作業開始の連絡（在宅）':f.mode==='通所'?'来所':'開始'),
+  !t(f.start)&&f.mode&&f.mode+'で利用',
+  t(f.work)&&'作業：'+t(f.work)+(t(f.amount)?' '+t(f.amount):''),
+  t(f.memo),
+  words&&'本人の言葉：「'+words+'」',
+  t(f.end)&&t(f.end)+' '+(f.mode==='在宅'?'作業終了の連絡':f.mode==='通所'?'退所':'終了'),
+ ];
+ return lines.filter(Boolean).join('\n');
+}
 export type DocRef={id:string;category:string;name:string;created:string;readable:boolean};
 export type DailyRecord={id:string;person:string;date:string;memo:string;record:string;consideration:string;author:string;created:string;updated:string};
 export type Example={id:string;kind:'record'|'consideration';body:string};

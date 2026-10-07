@@ -260,3 +260,19 @@
 @media(max-width:600px){.dailyRow .talkPrimary{width:100%;margin-left:0}}
 /* 生徒が4人以上：中くらいの画面（タブレットなど）では2列にして、教室を高くする */
 @media(min-width:761px) and (max-width:1099px){.studentArea:has(.studentSlot:nth-child(4)){grid-template-columns:repeat(2,minmax(0,1fr));top:30%}.classroomScene:has(.studentSlot:nth-child(4)){height:auto;min-height:calc(700px + var(--extra-height))}}
+/* 日々の記録：誰でも・携帯でも入れやすい「今日の様子」 */
+.dailyGuide{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;padding:8px 12px;list-style:none;counter-reset:g;background:#eef3e3;border:1px solid #d3ddc2;font-size:13px;font-weight:650;color:#4d6a4a}
+.dailyGuide li{counter-increment:g}.dailyGuide li::before{content:counter(g);display:inline-grid;place-items:center;width:20px;height:20px;margin-right:5px;border-radius:50%;background:#446b56;color:#fffce8;font-size:12px}
+.dailyNotice{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;background:#fbf3e6;border:1px solid #ead7b4;padding:8px 12px}
+.dailyNotice p{margin:0;font-size:13px;color:#6b5634;flex:1;min-width:14em}.dailyNotice .talkSecondary{margin:0}
+.dailyField{border:0;padding:0;margin:0 0 10px}.dailyField legend{font-size:13px;font-weight:650;color:#59724e;margin-bottom:6px;padding:0}
+.dailySeg{display:flex;gap:8px}.dailySeg button{flex:1;max-width:140px;min-height:42px;font-size:15px;font-weight:650;border:2px solid #b9c7ad;background:#fffef8;color:#4d6a4a}
+.dailySeg button[aria-pressed=true],.dailyCompose .boardNameChips button[aria-pressed=true]{background:#446b56;border-color:#315340;color:#fffce8}
+.dailyPair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+.dailyPair label,.dailyLabel{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:650;color:#59724e;margin-bottom:8px}
+.dailyPair input,.dailyLabel input{width:100%;min-width:0;padding:8px 10px;border:1px solid #c6d1b8;background:#fffefa;font-size:16px;border-radius:4px;font-weight:400}
+.dailyLabel .proofText{margin-top:0}
+.dailyCompose .boardNameChips{margin:0}
+.dailyCompose .boardNameChips button{font-size:14px;padding:7px 12px;min-height:36px}
+.dailyMore{margin-top:0}.dailyMore[open]{display:flex;flex-direction:column;gap:10px}
+@media(max-width:600px){.dailyCompose .proofText,.dailyDate input{font-size:16px}.dailyGuide{font-size:12px}}
