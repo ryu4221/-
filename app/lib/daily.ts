@@ -21,6 +21,12 @@ export function composeMemo(f:MemoForm){
 export type DocRef={id:string;category:string;name:string;created:string;readable:boolean};
 export type DailyRecord={id:string;person:string;date:string;memo:string;record:string;consideration:string;author:string;created:string;updated:string};
 export type Example={id:string;kind:'record'|'consideration';body:string};
+// Cloudflare Workers AI のおすすめモデル（2026-10 時点の公式一覧で確認。無料枠は1日10,000ニューロン）
+export const cloudflareModels=[
+ {id:'@cf/qwen/qwen3-30b-a3b-fp8',label:'Qwen3 30B',note:'おすすめ。無料枠で1日に多く作れる'},
+ {id:'@cf/google/gemma-4-26b-a4b-it',label:'Gemma 4 26B',note:'Qwen3の文章が合わないときに'},
+ {id:'@cf/meta/llama-3.3-70b-instruct-fp8-fast',label:'Llama 3.3 70B',note:'無料枠では1日20件前後まで'},
+];
 export type AiStatus={configured:boolean;source:'env'|'settings'|null;model:string;service:string};
 export type DailyInfo={traits:string;docs:DocRef[];records:DailyRecord[];examples:Example[];ai:AiStatus};
 export type Draft={record:string;consideration:string;sample:boolean;sent:string};
@@ -83,9 +89,9 @@ export function buildPrompt(p:PromptInput){
  ].filter(Boolean).join('\n\n');
  return {system,user};
 }
-// AIの返事から2つの文章を取り出す
+// AIの返事から2つの文章を取り出す（考える過程 <think>…</think> が付いていれば除く）
 export function parseDraft(text:string){
- const t=text.replace(/\r/g,'').replace(/```[a-z]*\n?|```/g,'').trim();
+ const t=text.replace(/<think>[\s\S]*?<\/think>/g,'').replace(/\r/g,'').replace(/```[a-z]*\n?|```/g,'').trim();
  const r=t.match(/【日々の記録】\s*([\s\S]*?)(?=【職員考察】|$)/),c=t.match(/【職員考察】\s*([\s\S]*)$/);
  if(!r&&!c)return {record:t,consideration:''};
  return {record:(r?.[1]??'').trim(),consideration:(c?.[1]??'').trim()};

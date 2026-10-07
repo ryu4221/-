@@ -276,3 +276,5 @@
 .dailyCompose .boardNameChips button{font-size:14px;padding:7px 12px;min-height:36px}
 .dailyMore{margin-top:0}.dailyMore[open]{display:flex;flex-direction:column;gap:10px}
 @media(max-width:600px){.dailyCompose .proofText,.dailyDate input{font-size:16px}.dailyGuide{font-size:12px}}
+.dailyModels{margin-top:8px}.dailyModels button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border-radius:6px;font-size:13px;padding:6px 10px}.dailyModels small{font-size:11px;font-weight:400;opacity:.85}
+.dailyModels button[aria-pressed=true]{background:#446b56;border-color:#315340;color:#fffce8}

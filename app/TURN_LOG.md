@@ -202,6 +202,30 @@
 - 終了時コミットまたは差分の場所：claude/clever-keller-ojh1j8 の最新コミット。
 - 次の担当にしてほしい作業（Codex）：統合・公開に加えて、職員だけがアクセスできる設定にできるかの確認（ユーザーと相談）。
 
+## 2026-10-07 / Claude（デスクトップ：無料のAIサービス〔Cloudflare〕で動かす準備）
+- ユーザーの依頼：アプリ内で無料のAIで文章を作りたい。3案（有料GPT／端末内AI／無料のAIサービス）のうち、無料のAIサービス（Cloudflare Workers AI）で進める。
+- 作業フォルダー／開始時コミット：C:\Users\ryu16\dev\shien（claude/clever-keller-ojh1j8）、873f58f。
+- 公式ドキュメントで確認したこと（2026-10-07）：接続先 https://api.cloudflare.com/client/v4/accounts/{アカウントID}/ai/v1/chat/completions と Bearer の鍵（lib/ai.ts と一致）、無料枠は1日10,000ニューロン、鍵の作り方（Workers AI →「Use REST API」→「Create a Workers AI API Token」）、モデルIDと料金（qwen3-30b-a3b-fp8、gemma-4-26b-a4b-it、llama-3.3-70b-instruct-fp8-fast）。
+- 変更したファイル：
+  - lib/daily.ts：cloudflareModels（おすすめモデル3つ）を追加。parseDraft で、考える過程（<think>…</think>）を下書きから除く。
+  - lib/ai.ts：出力の上限 max_tokens を 1200 → 3000（考えてから答えるモデルで文章が途中で切れないように）。モデル名に qwen3 を含むときは /no_think を付けて考える過程を省く。
+  - components/DailyConversation.tsx：AIの設定で、Cloudflareのときにモデルをボタンで選べるようにし、初期値を Qwen3 30B にした。
+  - app/classroom.css：モデルのボタンの見た目を追加。
+  - HANDOFF.md：AIの設定手順を公式の画面名とおすすめモデル・1日の件数の見込みに更新。
+  - DB・依存パッケージの変更なし。
+- 実行した確認と結果：
+  - tsc 成功、ESLint エラー0（既存の img 警告1件のみ）、proofread テストすべて合格、npm run build 成功。
+  - 手元の偽のAIサーバー（OpenAI互換）で：モデル名に qwen3 を含むと末尾に /no_think が付く、max_tokens が3000、送る内容に氏名が入らない、返事の <think>…</think> が下書きに出ないことを確認。
+  - 375×812（携帯）でAIの設定画面：モデルのボタン3つ、初期は Qwen3 30B が選択済み、横スクロールなし、コンソールエラーなし。確認後、ローカルのAI設定は消した（ローカルの架空の職員Aを管理者にし、暗証番号を設定済み。本番とは無関係）。
+- 未実施の確認／未完了事項：
+  - 本物の Cloudflare にはつないでいない（アカウントと鍵はユーザーが作る。鍵はコード・Git・ログに書かない）。
+  - 1日に作れる件数は料金表からの概算。実際の件数と、Qwen3 の日本語の文章の質は鍵の登録後に確認する。合わなければ設定画面で Gemma 4 に切り替える。
+  - 公開先（Sites）から api.cloudflare.com へ通信できるかは未確認（Codex）。
+- DB migrationの追加有無：なし。
+- 公開済み／未公開：未公開。
+- 終了時コミットまたは差分の場所：claude/clever-keller-ojh1j8 の最新コミット。
+- 次の担当にしてほしい作業（Codex）：統合・公開、Sitesから外部AIへの通信確認、職員だけがアクセスできる設定の相談。
+
 ## 次の担当が追記する欄
 - 担当／日付：
 - ユーザーの依頼：

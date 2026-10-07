@@ -17,9 +17,10 @@ export async function aiConfig(db:D1Database):Promise<Config|null>{
 }
 export async function aiStatus(db:D1Database):Promise<AiStatus>{const c=await aiConfig(db);return c?{configured:true,source:c.source,model:c.model,service:c.service}:{configured:false,source:null,model:'',service:''}}
 export class AiError extends Error{}
+// 考えてから答えるモデル（Qwen3など）は考える過程にも出力の枠を使うため、枠を広めにし、Qwen3は /no_think で考える過程を省く
 export async function chat(c:Config,system:string,user:string){
  let r:Response;
- try{r=await fetch(c.baseUrl.replace(/\/+$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',...(c.key?{Authorization:'Bearer '+c.key}:{})},body:JSON.stringify({model:c.model,messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:1200,temperature:0.4}),signal:AbortSignal.timeout(90000)})}
+ try{r=await fetch(c.baseUrl.replace(/\/+$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',...(c.key?{Authorization:'Bearer '+c.key}:{})},body:JSON.stringify({model:c.model,messages:[{role:'system',content:system},{role:'user',content:/qwen3/i.test(c.model)?user+'\n/no_think':user}],max_tokens:3000,temperature:0.4}),signal:AbortSignal.timeout(90000)})}
  catch{throw new AiError('AIにつながりませんでした。時間をおいてもう一度お試しください。')}
  if(r.status===401||r.status===403)throw new AiError('AIの鍵が正しくないか、使えない状態です。管理者が「AIの設定」を確認してください。');
  if(r.status===404)throw new AiError('AIのモデル名か接続先が見つかりません。管理者が「AIの設定」を確認してください。');

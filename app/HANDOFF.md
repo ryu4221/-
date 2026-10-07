@@ -122,9 +122,9 @@ Windowsで公式site-workflow.mjsのpackage-site.sh呼び出しがパス解釈�
 ## AIの設定手順（日々の記録）
 ユーザーが行うこと（Cloudflare Workers AI の無料枠を使う場合。画面や名称は変わることがあるので、Cloudflareの公式案内も確認する）：
 1. Cloudflare の無料アカウントを作る。
-2. ダッシュボードで「アカウントID」（32文字の英数字）を確認する。
-3. 「APIトークン」を作る。権限は Workers AI の読み取り／実行だけにする。
-4. Workers AI のモデル一覧から、日本語が使えるモデル名を選ぶ（例：@cf/meta/llama-3.3-70b-instruct-fp8-fast。実際に使えるかは一覧で確認）。
+2. ダッシュボードの「Workers AI」→「Use REST API」を開く（2026-10-07 公式手順で確認）。
+3. 「Create a Workers AI API Token」→ 内容を確認して「Create API Token」→「Copy API Token」で鍵を控える（権限は Workers AI の Read と Edit だけ）。同じ画面の「Get Account ID」で「Account ID」（32文字）を控える。
+4. モデルは画面のボタンから選ぶ。初期は @cf/qwen/qwen3-30b-a3b-fp8（入力 $0.051・出力 $0.335 / 100万トークン。無料枠 1日10,000ニューロン＝約$0.11 で、資料3件付きでも1日100件前後の見込み）。文章が合わなければ @cf/google/gemma-4-26b-a4b-it（1日70件前後の見込み）、@cf/meta/llama-3.3-70b-instruct-fp8-fast（1日20件前後）。件数は1回あたり入力約9,000・出力約1,700トークンとした概算で、実際は鍵の登録後に確認する。
 5. アプリの「日々の記録」→「AIの設定（管理者）」で、サービス＝Cloudflare、アカウントID、モデル名、鍵（APIトークン）、管理者の暗証番号を入れて保存する。
 Codexが確認すること：公開先（Sites）から api.cloudflare.com などの外部へ通信できるか。Sitesが秘密の環境変数に対応していれば、AI_BASE_URL・AI_API_KEY・AI_MODEL で設定してもよい（その場合は画面の設定より優先される）。鍵をコード・Git・TURN_LOGに書かない。
 無料枠を超えると「無料で使える量を超えました」と表示され、翌日まで使えない（文章チェックの規則判定は使える）。
