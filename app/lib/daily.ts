@@ -76,13 +76,14 @@ export function buildPrompt(p:PromptInput){
   '8. 出力は次の形だけにする（前置きや説明は書かない）：\n【日々の記録】\n（本文）\n【職員考察】\n（本文）',
  ].join('\n');
  const docs=p.docs.map(d=>`■${d.category}（${d.name}）\n${d.text.slice(0,1800)}`).join('\n\n');
- const recent=p.recent.map(r=>`■${r.date}\n記録：${r.record.slice(0,300)}\n考察：${r.consideration.slice(0,300)}`).join('\n');
+ // ノウビーから取り込んだ記録は300字を超えることが多いので、途中で切れないよう500字まで渡す
+ const recent=p.recent.map(r=>`■${r.date}\n記録：${r.record.slice(0,500)}\n考察：${r.consideration.slice(0,500)}`).join('\n');
  const user=[
   `【日付】${p.date}`,
   `【今日のメモ】\n${p.memo||'（なし）'}`,
   `【本人の特徴】\n${p.traits||'（未登録）'}`,
   docs&&`【参考資料】\n${docs}`,
-  recent&&`【最近の記録（流れの参考）】\n${recent}`,
+  recent&&`【最近の記録（流れの参考。今日の記録には、今日のメモに無いことを書かない）】\n${recent}`,
   `【日々の記録の文例】\n${ex('record')}`,
   `【職員考察の文例】\n${ex('consideration')}`,
   '上の情報から、今日の「日々の記録」と「職員考察」を作成してください。',
