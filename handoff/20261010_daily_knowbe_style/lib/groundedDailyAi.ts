@@ -1,6 +1,6 @@
 import {chat,AiError} from './ai';
 import {parseDraft,characterCount} from './dailyAssistant';
-import {groundingIssues,formatDailyRecord,retainGroundedSentences,type GroundingOptions} from './dailyGrounding';
+import {groundingIssues,formatDailyRecord,retainGroundedSentences,usualIssues,retainUsualSentences,type GroundingOptions} from './dailyGrounding';
 // 2026-10-10 改訂：
 //  - 短すぎる時の書き直しは「今日のメモの事実の量から決めた下限」（dailyStyle.lengthPlan の target）未満の時だけ頼む。
 //    事実の少ない日に、目安の字数まで水増しさせない。
@@ -27,4 +27,28 @@ export async function groundedDailyAi(config:Parameters<typeof chat>[0],prompt:{
  if(clean.unverified)warnings.push(`日々の記録に、今日のメモと対応する語が見つからない文が${clean.unverified}つあります。今日の出来事か確認してください。`);
  if(isShort(clean))warnings.push('文字数は目安より短めです。必要に応じて、作業中の様子・本人の話・職員の対応を今日のメモに追記して作り直してください。');
  return {record:formatDailyRecord(clean.record),consideration:clean.consideration,warnings};
+}
+
+// メモに今日の様子が無い日（dailyStyle.isWorkOnly）の「いつもの様子」の下書き。
+// prompt は dailyStyle.usualSystemPrompt・usualUserTail・usualPlan で組み立てる。recent は最近の記録の本文（丸写しの検出用）。
+// 結果には必ず usual:true と要確認の警告（usualNotice）を付け、画面で「要確認の下書き」と表示する。
+export async function usualDailyAi(config:Parameters<typeof chat>[0],prompt:{system:string;user:string;target?:{record:readonly number[];consideration:readonly number[]}},memo:string,recent:readonly string[],notice:string,options:GroundingOptions={}){
+ let correction='',draft={record:'',consideration:''};
+ const isShort=(d:typeof draft)=>!!prompt.target&&(characterCount(d.record)<prompt.target.record[0]||characterCount(d.consideration)<prompt.target.consideration[0]);
+ for(let attempt=0;attempt<2;attempt++){
+  try{draft=parseDraft(await chat(config,prompt.system,prompt.user+correction));}
+  catch(e){if(attempt===0||(!draft.record&&!draft.consideration))throw e;break;}
+  draft={...draft,record:formatDailyRecord(draft.record)};
+  const issues=usualIssues(draft,memo,recent,options);
+  if(!issues.length&&!isShort(draft))return {...draft,usual:true as const,warnings:[notice]};
+  correction='\n\n【修正する下書き】\n【日々の記録】\n'+draft.record+'\n【職員考察】\n'+draft.consideration
+   +(issues.length?'\n【直す部分】\n'+issues.join('\n')+'\n数字は空欄（　）に、発言・具体的な出来事は削除し、最近の記録の文は言い換えてください。':'')
+   +(isShort(draft)?`\n【短い部分】現在は記録${characterCount(draft.record)}字・考察${characterCount(draft.consideration)}字です。開始時の体調の確認、作業の様子、休憩、終了時の報告、終了後の過ごし方を、いつもの流れとして1〜2文ずつ書いてください。`:'')
+   +'\n指定の2見出しで全文を出力してください。';
+ }
+ const clean=retainUsualSentences(draft,memo,recent,options);
+ if(!clean.record&&!clean.consideration)throw new AiError('下書きを作成できませんでした。今日の様子を一言でもメモに入れて、もう一度作成してください。');
+ const warnings=[notice];
+ if(clean.removed)warnings.push('メモにない数字・発言・具体的な出来事を含む文を除きました。');
+ return {record:formatDailyRecord(clean.record),consideration:clean.consideration,usual:true as const,warnings};
 }

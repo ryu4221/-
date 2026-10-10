@@ -1,9 +1,9 @@
 // 架空データだけで確認するテスト（実在の利用者・記録は使わない）。
 // 実行：node tests/run-tests.mjs（lib を一時フォルダーへ写し、ai・dailyAssistant を偽物に差し替えて実行する）
 import assert from 'node:assert/strict';
-import {groundingIssues,formatDailyRecord,retainGroundedSentences,insertResponder,splitSentences,unanchored,unanchoredLabel} from './lib/dailyGrounding.ts';
-import {resolveMode,lengthPlan,systemPrompt,userTail,exemplars,isWorkOnly,memoFacts} from './lib/dailyStyle.ts';
-import {groundedDailyAi} from './lib/groundedDailyAi.ts';
+import {groundingIssues,formatDailyRecord,retainGroundedSentences,insertResponder,splitSentences,unanchored,unanchoredLabel,usualIssues} from './lib/dailyGrounding.ts';
+import {resolveMode,lengthPlan,systemPrompt,userTail,exemplars,isWorkOnly,memoFacts,usualExemplar,usualPlan,usualSystemPrompt,usualUserTail,usualNotice} from './lib/dailyStyle.ts';
+import {groundedDailyAi,usualDailyAi} from './lib/groundedDailyAi.ts';
 import {setReplies,sentPrompts} from './lib/ai.ts';
 
 let pass=0;const t=async(name:string,fn:()=>void|Promise<void>)=>{await fn();pass++;console.log('ok',name);};
@@ -44,6 +44,9 @@ await t('時刻・数量・発言・作業名・見本の内容の混入を検�
  const i=groundingIssues({record:'10:15に昼食をとり「疲れました」と話されました。寝つきが悪かったとのことでした。',consideration:'チラシ折り5setされました。\n今後も支援していきます。'},memo,{distinct:exemplars.在宅.distinct});
  assert.ok(i.includes('メモにない時刻・数量：10:15'));assert.ok(i.some(x=>x.startsWith('メモにない発言')));
  assert.ok(i.includes('メモにない作業名：チラシ折り'));assert.ok(i.includes('メモにない内容（見本の内容）：寝つき'));
+});
+await t('メモに様子がある日も「特に何もありませんでした」だけの文は止める',()=>{
+ assert.ok(ok('眠気があるとのことでした。特に何もありませんでした。','封入作業5setされました。\n今後も体調を伺っていきます。').includes('「特に何もありませんでした」だけの文'));
 });
 await t('引用の句読点・全角半角の違いは同じ発言として扱う',()=>{
  assert.deepEqual(ok('「ゆっくりやります。」と話されました。','封入作業5setされました。\n今後も体調を伺っていきます。'),[]);
@@ -122,5 +125,40 @@ await t('複数人を順に作っても、他の人の失敗で結果を失わ�
   try{out[i]=(await groundedDailyAi(cfg,{system:'s',user:'u'},p.memo)).record;}catch{out[i]='（失敗）';}
  }
  assert.ok(out[0].includes('眠気'));assert.equal(out[1],'（失敗）');
+});
+// ── メモに様子が無い日の「いつもの様子」の下書き ──
+const recentText='09:20作業開始の連絡頂きました。\n昨日は通院のため疲れが残っているとのことでした。\n11:10作業終了の連絡頂きました。\n予定していた分を終えたと報告がありました。';
+await t('メモが空でも、最近の記録の書式から利用の形を選ぶ',()=>{
+ assert.equal(resolveMode('','',recentText),'在宅');assert.equal(isWorkOnly(''),true);assert.equal(isWorkOnly('作業：封入作業'),true);
+});
+await t('時刻の空欄の見出しも1行に独立させ、担当職員を付けられる',()=>{
+ const r=formatDailyRecord('( : )作業開始の連絡頂きました。体調は普段と変わらないとのことでした。');
+ assert.equal(r,'（　：　）作業開始の連絡頂きました。\n体調は普段と変わらないとのことでした。');
+ assert.ok(insertResponder(r,'職員A').startsWith('（　：　）作業開始の連絡頂きました。（職員A対応）'));
+});
+await t('いつもの様子の下書き：作った数字・発言・具体的な出来事・丸写し・「特に何もありません」を止める',()=>{
+ const i=usualIssues({record:'09:30作業開始の連絡頂きました。\n「頑張ります」と話されました。通院後で疲れがあるとのことでした。特に何もありませんでした。予定していた分を終えたと報告がありました。',consideration:'（作業名）（量）されました。\n今後も体調を伺っていきます。'},'',[recentText]);
+ assert.ok(i.some(x=>x.includes('9:30')));assert.ok(i.some(x=>x.startsWith('作った発言')));assert.ok(i.some(x=>x.includes('通院')));
+ assert.ok(i.includes('「特に何もありませんでした」だけの文'));assert.ok(i.some(x=>x.startsWith('最近の記録の文の丸写し')));
+});
+await t('いつもの様子の見本は規則を通り、ノウビーの長さに近い',()=>{
+ assert.deepEqual(usualIssues({record:usualExemplar.record,consideration:usualExemplar.consideration},usualExemplar.memo),[]);
+ assert.ok(count(usualExemplar.record)>=usualPlan('在宅').record[0],String(count(usualExemplar.record)));
+ assert.ok(count(usualExemplar.consideration)>=usualPlan('在宅').consideration[0],String(count(usualExemplar.consideration)));
+ const s=usualSystemPrompt('在宅');assert.ok(s.includes('（　：　）作業開始の連絡頂きました。'));assert.ok(s.includes('（作業名）（量）されました'));
+ assert.ok(!usualSystemPrompt('通所').includes('（作業名）（量）されました'));
+});
+await t('メモが空の日：作り直しを1回頼み、要確認の下書きとして返す',async()=>{
+ setReplies(['【日々の記録】\n09:30作業開始の連絡頂きました。\n特に何もありませんでした。\n【職員考察】\n特に何もありませんでした。',
+  '【日々の記録】\n'+usualExemplar.record.replace(/09:30|11:30/g,'（　：　）').replace('チラシ折り','（作業名）')+'\n【職員考察】\n'+usualExemplar.consideration.replace('チラシ折り5set','（作業名）（量）').replace('在宅での','')]);
+ const r=await usualDailyAi(cfg,{system:usualSystemPrompt('在宅'),user:'u'+usualUserTail('在宅'),target:usualPlan('在宅')},'',[recentText],usualNotice);
+ assert.equal(r.usual,true);assert.deepEqual(r.warnings,[usualNotice]);
+ assert.ok(sentPrompts()[1].includes('「特に何もありませんでした」だけの文'));assert.ok(sentPrompts()[1].includes('9:30'));
+ assert.ok(r.record.startsWith('（　：　）作業開始の連絡頂きました。\n'));assert.ok(!/\d/.test(r.record+r.consideration));
+});
+await t('メモの時刻・作業・量はそのまま使う（空欄にしない）',async()=>{
+ const m=usualExemplar.memo;setReplies(['【日々の記録】\n'+usualExemplar.record+'\n【職員考察】\n'+usualExemplar.consideration]);
+ const r=await usualDailyAi(cfg,{system:'s',user:'u',target:usualPlan('在宅')},m,[recentText],usualNotice);
+ assert.ok(r.record.startsWith('09:30作業開始の連絡頂きました。'));assert.ok(r.consideration.startsWith('チラシ折り5setされました。'));
 });
 console.log(`\n${pass} 件すべて合格`);

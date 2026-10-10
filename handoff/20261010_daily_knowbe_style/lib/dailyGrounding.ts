@@ -116,6 +116,7 @@ export function sentenceIssues(sentence:string,memo:string,kind:'record'|'consid
  for(const w of options.distinct??[])if(sentence.includes(w)&&!memo.includes(w))issues.push('メモにない内容（見本の内容）：'+w);
  if(kind==='consideration'&&firstLine&&sentence.trim().length<=30){const w=workLineIssue(sentence.trim(),memo);if(w)issues.push(w);}
  issues.push(...ruleIssues(kind==='record'?sentence:factualPart(sentence),memo));
+ if(emptyFiller.test(sentence.trim())&&!/特に|なし|無し/.test(memo))issues.push('「特に何もありませんでした」だけの文');
  return issues;
 }
 export function groundingIssues(draft:Draft,memo:string,options:GroundingOptions={}){
@@ -130,13 +131,15 @@ export function groundingIssues(draft:Draft,memo:string,options:GroundingOptions
 // 在宅の開始・終了の見出しを、事業所のノウビーで最も多い書式「09:38作業開始の連絡頂きました。」にそろえる
 // （実測：在宅475件中 約84%がこの形）。時刻は2桁にし、見出しは1行に独立させる。出来事や時刻は追加しない。
 const headerRe=/(\d{1,2})[:：](\d{2})に?(?:ご?本人から)?(?:お?電話(?:で|にて))?、?作業の?(開始|終了)の?(?:ご連絡|ご報告|連絡|報告|お?電話)(?:がありました|を?頂きました|を?いただきました|を受けました|が入りました)。?/g;
-export const headerLine=/^\d{2}:\d{2}(?:作業(?:開始|終了)の連絡頂きました|に?来所されました|に?退所されました)。/;
+// 時刻の空欄（いつもの様子の下書きで、メモに時刻が無い時）は「（　：　）」
+export const headerLine=/^(?:\d{2}:\d{2}|（　：　）)(?:作業(?:開始|終了)の連絡頂きました|に?来所されました|に?退所されました)。/;
 export function formatDailyRecord(record:string){
  return record.replace(/\r/g,'')
   .replace(headerRe,(_,h:string,m:string,k:string)=>`${h.padStart(2,'0')}:${m}作業${k}の連絡頂きました。`)
   .replace(/(?<![\d:])(\d):(\d{2})(?!\d)/g,'0$1:$2')
-  .replace(/([^\n])[ \t　]*(\d{2}:\d{2}作業(?:開始|終了)の連絡頂きました。)/g,'$1\n$2')
-  .replace(/(\d{2}:\d{2}作業(?:開始|終了)の連絡頂きました。)[ \t　]*(?=[^\n（(])/g,'$1\n')
+  .replace(/[（(][\s　]*[:：][\s　]*[）)]/g,'（　：　）')
+  .replace(/([^\n])[ \t　]*((?:\d{2}:\d{2}|（　：　）)作業(?:開始|終了)の連絡頂きました。)/g,'$1\n$2')
+  .replace(/((?:\d{2}:\d{2}|（　：　）)作業(?:開始|終了)の連絡頂きました。)[ \t　]*(?=[^\n（(])/g,'$1\n')
   .replace(/\n{2,}/g,'\n').trim();
 }
 // 見出し行（在宅の開始・終了、通所の来所・退所）の直後に「（○○対応）」を付ける。addResponder から使う想定。
@@ -158,4 +161,32 @@ export function retainGroundedSentences(draft:Draft,memo:string,options:Groundin
  // 語の対応が無い文は削除せず、件数だけ返す（画面で確認を促す）
  const unverified=record.split('\n').flatMap(splitSentences).filter(s=>unanchored(s,memo)).length;
  return {record,consideration:clean(draft.consideration,'consideration'),removed,unverified};
+}
+
+// ── 「いつもの様子」の下書き（メモに様子が無い日）のチェック ──
+// 今日の事実と取り違えやすいものだけを止める：メモに無い数字、本人の発言、具体的な出来事、最近の記録の文の丸写し、
+// 「特に何もありませんでした」だけの文。いつもの流れ（体調の確認・休憩・終了時の報告など）の一般的な文は通す。
+const specificEvent=/通院|病院|受診|診察|服薬|お薬|薬を|痛|熱が|発熱|家族|母|父|兄|姉|弟|妹|買い物|外出|面談|旅行|入院|退院|転倒|けが|怪我|ケンカ|トラブル|遅刻|欠席/;
+const emptyFiller=/^[^、]{0,12}(?:特に(?:何も|変わったことは|問題は)?(?:ありませんでした|なかったです|無かったです|なし)|特記事項(?:は)?(?:なし|ありません))。?$/;
+const plain=(s:string)=>nfkc(s).replace(/[\s、。「」]/g,'');
+export function usualSentenceIssues(sentence:string,memo:string,recent:readonly string[]=[],options:GroundingOptions={}){
+ const issues:string[]=[],memoNums=new Set(numbers(memo));
+ for(const n of numbers(sentence))if(!memoNums.has(n))issues.push('メモにない時刻・数量（空欄（　）にする）：'+n);
+ for(const q of sentence.matchAll(/「([^」]+)」/g))if(!quoteKey(memo).includes(quoteKey(q[1])))issues.push('作った発言：'+q[1]);
+ const ev=sentence.match(specificEvent);if(ev&&!memo.includes(ev[0]))issues.push('メモにない具体的な出来事：'+ev[0]);
+ if(emptyFiller.test(sentence.trim()))issues.push('「特に何もありませんでした」だけの文');
+ const p=plain(sentence);if(p.length>=20&&recent.some(r=>plain(r).includes(p)))issues.push('最近の記録の文の丸写し：'+sentence.trim().slice(0,30));
+ for(const w of options.distinct??[])if(sentence.includes(w)&&!memo.includes(w))issues.push('メモにない内容（見本の内容）：'+w);
+ return issues;
+}
+export function usualIssues(draft:Draft,memo:string,recent:readonly string[]=[],options:GroundingOptions={}){
+ const issues:string[]=[];
+ if(!draft.record.trim()||!draft.consideration.trim())issues.push('記録と職員考察の両方が必要です');
+ for(const kind of ['record','consideration'] as const)for(const line of draft[kind].split('\n'))for(const s of splitSentences(line))issues.push(...usualSentenceIssues(s,memo,recent,options));
+ return [...new Set(issues)];
+}
+export function retainUsualSentences(draft:Draft,memo:string,recent:readonly string[]=[],options:GroundingOptions={}){
+ let removed=0;
+ const clean=(text:string)=>text.split('\n').map(line=>splitSentences(line).filter(s=>{const bad=usualSentenceIssues(s,memo,recent,options).length>0;if(bad)removed++;return !bad;}).join('')).filter(l=>l.trim()).join('\n');
+ return {record:clean(draft.record),consideration:clean(draft.consideration),removed};
 }
